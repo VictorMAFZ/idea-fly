@@ -1,4 +1,4 @@
 // Auth components barrel export
-// This file will be updated as auth components are added
+// This file exports all authentication-related components
 
-export {};
+export { default as RegisterForm, type RegisterFormProps } from './RegisterForm';

@@ -388,9 +388,9 @@ def register_routes(app: FastAPI) -> None:
             "error": None
         }
     
-    # TODO: Register authentication routes when implemented
-    # from .auth.router import router as auth_router
-    # app.include_router(auth_router, prefix="/auth", tags=["authentication"])
+    # Register authentication routes
+    from .auth.router import router as auth_router
+    app.include_router(auth_router)
     
     # TODO: Register user routes when implemented  
     # from .users.router import router as users_router

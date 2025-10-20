@@ -65,14 +65,14 @@ description: "Task list for Sistema de Autenticación de Usuarios implementation
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Create user repository with registration logic in `backend/src/auth/repository.py`
-- [ ] T019 [US1] Implement authentication service with registration in `backend/src/auth/service.py`
-- [ ] T020 [US1] Create POST /auth/register endpoint in `backend/src/auth/router.py`
-- [ ] T021 [P] [US1] Create RegisterForm component in `frontend/src/components/auth/RegisterForm.tsx`
-- [ ] T022 [P] [US1] Create registration service function in `frontend/src/services/authService.ts`
-- [ ] T023 [P] [US1] Create useAuth hook with register function in `frontend/src/hooks/useAuth.ts`
-- [ ] T024 [US1] Create registration page in `frontend/src/pages/register.tsx`
-- [ ] T025 [US1] Integrate registration flow with AuthContext in `frontend/src/contexts/AuthContext.tsx`
+- [x] T018 [US1] Create user repository with registration logic in `backend/src/auth/repository.py`
+- [x] T019 [US1] Implement authentication service with registration in `backend/src/auth/service.py`
+- [x] T020 [US1] Create POST /auth/register endpoint in `backend/src/auth/router.py`
+- [x] T021 [P] [US1] Create RegisterForm component in `frontend/src/components/auth/RegisterForm.tsx`
+- [x] T022 [P] [US1] Create registration service function in `frontend/src/services/authService.ts`
+- [x] T023 [P] [US1] Create useAuth hook with register function in `frontend/src/hooks/useAuth.ts`
+- [x] T024 [US1] Create registration page in `frontend/src/app/register/page.tsx`
+- [x] T025 [US1] Integrate registration flow with AuthContext in `frontend/src/contexts/AuthContext.tsx`
 
 ### Tests for User Story 1 (Optional - Constitution Compliance)
 

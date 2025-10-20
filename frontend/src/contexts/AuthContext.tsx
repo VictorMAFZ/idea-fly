@@ -30,6 +30,8 @@ import {
   AuthProvider as AuthProviderEnum,
 } from '../types/auth';
 
+import { authService } from '../services/authService';
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -273,27 +275,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
-      // TODO: Replace with actual API call when httpClient is implemented
-      // This is a placeholder until T014 is completed
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Call actual authService register method
+      const response = await authService.register(request);
       
-      // Mock successful registration response
-      const mockAuthResponse: AuthResponse = {
-        access_token: `mock_token_${Date.now()}`,
-        token_type: TokenType.BEARER,
-        expires_in: 86400, // 24 hours in seconds
-      };
-      
-      const mockUser: User = {
-        id: `user_${Date.now()}`,
-        name: request.name,
-        email: request.email,
-        auth_provider: AuthProviderEnum.EMAIL,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-      
-      handleAuthSuccess(mockAuthResponse, mockUser);
+      if (response.success && response.data) {
+        // Get user profile after successful registration
+        const userResponse = await authService.getUserProfile();
+        
+        if (userResponse.success && userResponse.data) {
+          handleAuthSuccess(response.data, userResponse.data);
+        } else {
+          throw new Error('Failed to fetch user profile after registration');
+        }
+      } else {
+        throw new Error(response.error?.message || 'Registration failed');
+      }
     } catch (error: any) {
       dispatch({ 
         type: 'SET_ERROR', 
@@ -307,26 +303,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
-      // TODO: Replace with actual API call when httpClient is implemented
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Call actual authService login method
+      const response = await authService.login(request);
       
-      // Mock successful login response
-      const mockAuthResponse: AuthResponse = {
-        access_token: `mock_token_${Date.now()}`,
-        token_type: TokenType.BEARER,
-        expires_in: 86400, // 24 hours in seconds
-      };
-      
-      const mockUser: User = {
-        id: `user_${Date.now()}`,
-        name: 'Mock User',
-        email: request.email,
-        auth_provider: AuthProviderEnum.EMAIL,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-      
-      handleAuthSuccess(mockAuthResponse, mockUser);
+      if (response.success && response.data) {
+        // Get user profile after successful login
+        const userResponse = await authService.getUserProfile();
+        
+        if (userResponse.success && userResponse.data) {
+          handleAuthSuccess(response.data, userResponse.data);
+        } else {
+          throw new Error('Failed to fetch user profile after login');
+        }
+      } else {
+        throw new Error(response.error?.message || 'Login failed');
+      }
     } catch (error: any) {
       dispatch({ 
         type: 'SET_ERROR', 
@@ -340,26 +331,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
-      // TODO: Replace with actual Google OAuth flow when implemented
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      // Call actual authService googleCallback method
+      const response = await authService.googleCallback(request);
       
-      // Mock successful Google OAuth response
-      const mockAuthResponse: AuthResponse = {
-        access_token: `google_token_${Date.now()}`,
-        token_type: TokenType.BEARER,
-        expires_in: 86400, // 24 hours in seconds
-      };
-      
-      const mockUser: User = {
-        id: `google_user_${Date.now()}`,
-        name: 'Google User',
-        email: 'user@google.com',
-        auth_provider: AuthProviderEnum.GOOGLE,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-      
-      handleAuthSuccess(mockAuthResponse, mockUser);
+      if (response.success && response.data) {
+        // Get user profile after successful Google OAuth
+        const userResponse = await authService.getUserProfile();
+        
+        if (userResponse.success && userResponse.data) {
+          handleAuthSuccess(response.data, userResponse.data);
+        } else {
+          throw new Error('Failed to fetch user profile after Google login');
+        }
+      } else {
+        throw new Error(response.error?.message || 'Google login failed');
+      }
     } catch (error: any) {
       dispatch({ 
         type: 'SET_ERROR', 
@@ -373,16 +359,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
-      // TODO: Call logout endpoint when implemented
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Call actual authService logout method
+      const response = await authService.logout();
       
-      // Clear storage
+      // Clear storage regardless of API response (for security)
       clearAuthFromStorage();
       
       // Update state
       dispatch({ type: 'LOGOUT' });
+      
+      // Log success if API call succeeded
+      if (response.success) {
+        console.log('Logout successful:', response.data?.message);
+      } else {
+        console.warn('Logout API call failed, but local session cleared:', response.error?.message);
+      }
     } catch (error: any) {
-      // Even if logout API fails, clear local state
+      // Even if logout API fails, clear local state for security
       clearAuthFromStorage();
       dispatch({ type: 'LOGOUT' });
       console.error('Logout API call failed, but local session cleared:', error);
@@ -398,21 +391,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
-      // TODO: Call /users/me endpoint when implemented
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Call actual authService getUserProfile method
+      const response = await authService.getUserProfile();
       
-      // For now, keep existing user data
-      dispatch({ 
-        type: 'REFRESH_USER_SUCCESS', 
-        payload: state.user 
-      });
+      if (response.success && response.data) {
+        dispatch({ 
+          type: 'REFRESH_USER_SUCCESS', 
+          payload: response.data 
+        });
+      } else {
+        throw new Error(response.error?.message || 'Failed to fetch user profile');
+      }
     } catch (error: any) {
       dispatch({ 
         type: 'SET_ERROR', 
         payload: error?.message || 'Failed to refresh user profile.' 
       });
     }
-  }, [state.token, state.user, isTokenExpired]);
+  }, [state.token, isTokenExpired]);
 
   const clearError = useCallback((): void => {
     dispatch({ type: 'CLEAR_ERROR' });

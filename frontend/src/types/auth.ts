@@ -79,6 +79,15 @@ export interface GoogleOAuthRequest {
   state?: string;
 }
 
+/**
+ * Google OAuth access token request payload.
+ * For direct token authentication (frontend flow).
+ */
+export interface GoogleTokenRequest {
+  /** Google OAuth access token */
+  access_token: string;
+}
+
 // ============================================================================
 // RESPONSE INTERFACES (Output DTOs)  
 // ============================================================================
@@ -188,6 +197,8 @@ export interface AuthActions {
   login: (request: LoginRequest) => Promise<void>;
   /** Login/register with Google OAuth */
   loginWithGoogle: (request: GoogleOAuthRequest) => Promise<void>;
+  /** Login/register with Google OAuth access token */
+  loginWithGoogleToken: (accessToken: string) => Promise<void>;
   /** Logout current user */
   logout: () => Promise<void>;
   /** Refresh current user profile */

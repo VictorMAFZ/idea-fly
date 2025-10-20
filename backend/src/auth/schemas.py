@@ -144,6 +144,26 @@ class GoogleOAuthRequest(BaseModel):
         }
 
 
+class GoogleTokenRequest(BaseModel):
+    """Schema for Google OAuth access token authentication."""
+    
+    access_token: str = Field(
+        ...,
+        min_length=1,
+        max_length=2048,
+        description="Google OAuth access token obtained from client",
+        example="ya29.a0ARrdaM9Y7iMqiLnj2jSrLq..."
+    )
+
+    class Config:
+        """Pydantic configuration."""
+        schema_extra = {
+            "example": {
+                "access_token": "ya29.a0ARrdaM9Y7iMqiLnj2jSrLq_example_token"
+            }
+        }
+
+
 # Response Schemas (Output DTOs)
 
 class Token(BaseModel):
@@ -425,6 +445,7 @@ __all__ = [
     "UserRegistrationRequest",
     "UserLoginRequest", 
     "GoogleOAuthRequest",
+    "GoogleTokenRequest",
     
     # Response schemas
     "Token",

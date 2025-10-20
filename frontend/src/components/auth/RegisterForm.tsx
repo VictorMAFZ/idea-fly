@@ -9,6 +9,8 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { RegisterRequest, AuthStatus } from '../../types/auth';
+import { GoogleAuthButton } from './GoogleAuthButton';
+import { useGoogleAuth } from '../../hooks/useGoogleAuth';
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -162,12 +164,23 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const nameInputRef = useRef<HTMLInputElement>(null);
   const errorAnnouncementRef = useRef<HTMLDivElement>(null);
 
+  // Google OAuth hook
+  const { 
+    signInWithGoogle: handleGoogleAuth, 
+    loading: googleLoading, 
+    error: googleError,
+    clearError: clearGoogleError 
+  } = useGoogleAuth();
+
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
 
-  const isLoading = authStatus === AuthStatus.LOADING;
+  const isLoading = authStatus === AuthStatus.LOADING || googleLoading;
   const isFormDisabled = disabled || isLoading;
+
+  // Combined error message
+  const displayError = error || googleError;
 
   // Validate entire form
   const validateForm = useCallback(() => {
@@ -253,6 +266,27 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     }
   }, [formData, validateForm, onSubmit]);
 
+  /**
+   * Handle successful Google OAuth
+   */
+  const handleGoogleSuccess = useCallback(async (accessToken: string) => {
+    try {
+      clearGoogleError(); // Clear any previous Google errors
+      await handleGoogleAuth(accessToken);
+    } catch (error) {
+      console.error('Google authentication error:', error);
+      // Error is already handled by the useGoogleAuth hook
+    }
+  }, [handleGoogleAuth, clearGoogleError]);
+
+  /**
+   * Handle Google OAuth error
+   */
+  const handleGoogleError = useCallback((error: string) => {
+    console.error('Google OAuth error:', error);
+    // Error is already set by the useGoogleAuth hook
+  }, []);
+
   // ============================================================================
   // EFFECTS
   // ============================================================================
@@ -266,10 +300,18 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   // Announce errors to screen readers
   useEffect(() => {
-    if (error && errorAnnouncementRef.current) {
-      errorAnnouncementRef.current.textContent = error;
+    if (displayError && errorAnnouncementRef.current) {
+      errorAnnouncementRef.current.textContent = displayError;
     }
-  }, [error]);
+  }, [displayError]);
+
+  // Clear errors when user starts typing after an error
+  useEffect(() => {
+    if ((errors.general || displayError) && (formData.name || formData.email || formData.password)) {
+      setErrors(prev => ({ ...prev, general: undefined }));
+      clearGoogleError(); // Also clear Google errors when user starts interacting
+    }
+  }, [formData.name, formData.email, formData.password, errors.general, displayError, clearGoogleError]);
 
   // ============================================================================
   // RENDER HELPERS
@@ -327,7 +369,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       </div>
 
       {/* Error message */}
-      {error && (
+      {displayError && (
         <div 
           className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md"
           role="alert"
@@ -340,7 +382,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
+              <p className="text-sm text-red-800">{displayError}</p>
             </div>
           </div>
         </div>
@@ -484,6 +526,30 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             'Crear cuenta'
           )}
         </button>
+
+        {/* Divider */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+              O continúa con
+            </span>
+          </div>
+        </div>
+
+        {/* Google OAuth Button */}
+        <GoogleAuthButton
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          loading={googleLoading}
+          disabled={isFormDisabled}
+          text="Registrarse con Google"
+          variant="outlined"
+          size="md"
+          className="w-full"
+        />
 
         {/* Login link */}
         {onSwitchToLogin && (

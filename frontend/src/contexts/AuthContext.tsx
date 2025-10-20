@@ -355,6 +355,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [handleAuthSuccess]);
 
+  const loginWithGoogleToken = useCallback(async (accessToken: string): Promise<void> => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    
+    try {
+      // Call actual authService authenticateWithGoogle method
+      const response = await authService.authenticateWithGoogle(accessToken);
+      
+      if (response.success && response.data) {
+        // Get user profile after successful Google OAuth
+        const userResponse = await authService.getUserProfile();
+        
+        if (userResponse.success && userResponse.data) {
+          handleAuthSuccess(response.data, userResponse.data);
+        } else {
+          throw new Error('Failed to fetch user profile after Google authentication');
+        }
+      } else {
+        throw new Error(response.error?.message || 'Google authentication failed');
+      }
+    } catch (error: any) {
+      dispatch({ 
+        type: 'SET_ERROR', 
+        payload: error?.message || 'Google authentication failed. Please try again.' 
+      });
+      throw error;
+    }
+  }, [handleAuthSuccess]);
+
   const logout = useCallback(async (): Promise<void> => {
     dispatch({ type: 'SET_LOADING', payload: true });
     
@@ -469,6 +497,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     register,
     login,
     loginWithGoogle,
+    loginWithGoogleToken,
     logout,
     refreshUser,
     clearError,
@@ -484,6 +513,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     register,
     login,
     loginWithGoogle,
+    loginWithGoogleToken,
     logout,
     refreshUser,
     clearError,

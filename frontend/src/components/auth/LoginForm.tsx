@@ -9,6 +9,8 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { LoginRequest, AuthStatus } from '../../types/auth';
+import { GoogleAuthButton } from './GoogleAuthButton';
+import { useGoogleAuth } from '../../hooks/useGoogleAuth';
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -143,11 +145,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const passwordRef = useRef<HTMLInputElement>(null);
   const submitButtonRef = useRef<HTMLButtonElement>(null);
 
+  // Google OAuth hook
+  const { 
+    signInWithGoogle: handleGoogleAuth, 
+    loading: googleLoading, 
+    error: googleError,
+    clearError: clearGoogleError 
+  } = useGoogleAuth();
+
   // ============================================================================
   // DERIVED STATE
   // ============================================================================
 
-  const isLoading = authStatus === AuthStatus.LOADING || isSubmitting;
+  const isLoading = authStatus === AuthStatus.LOADING || isSubmitting || googleLoading;
   const isFormDisabled = disabled || isLoading;
 
   // Check if form has any errors for submit button state
@@ -155,6 +165,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const hasErrors = Object.values(formErrors).some(error => !!error);
   const hasValues = formData.email.trim() && formData.password.trim();
   const canSubmit = !hasErrors && hasValues && !isFormDisabled;
+
+  // Combined error message
+  const displayError = error || googleError;
 
   // ============================================================================
   // EVENT HANDLERS
@@ -256,6 +269,27 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     setShowPassword(prev => !prev);
   }, []);
 
+  /**
+   * Handle successful Google OAuth
+   */
+  const handleGoogleSuccess = useCallback(async (accessToken: string) => {
+    try {
+      clearGoogleError(); // Clear any previous Google errors
+      await handleGoogleAuth(accessToken);
+    } catch (error) {
+      console.error('Google authentication error:', error);
+      // Error is already handled by the useGoogleAuth hook
+    }
+  }, [handleGoogleAuth, clearGoogleError]);
+
+  /**
+   * Handle Google OAuth error
+   */
+  const handleGoogleError = useCallback((error: string) => {
+    console.error('Google OAuth error:', error);
+    // Error is already set by the useGoogleAuth hook
+  }, []);
+
   // ============================================================================
   // KEYBOARD NAVIGATION
   // ============================================================================
@@ -275,10 +309,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({
    * Clear form errors when external error prop changes
    */
   useEffect(() => {
-    if (error) {
-      setErrors(prev => ({ ...prev, general: error }));
+    if (displayError) {
+      setErrors(prev => ({ ...prev, general: displayError }));
     }
-  }, [error]);
+  }, [displayError]);
+
+  /**
+   * Clear errors when user starts typing after an error
+   */
+  useEffect(() => {
+    if (errors.general && (formData.email || formData.password)) {
+      setErrors(prev => ({ ...prev, general: undefined }));
+      clearGoogleError(); // Also clear Google errors when user starts interacting
+    }
+  }, [formData.email, formData.password, errors.general, clearGoogleError]);
 
   /**
    * Auto-focus email field on mount
@@ -491,6 +535,30 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             'Iniciar Sesión'
           )}
         </button>
+
+        {/* Divider */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+              O continúa con
+            </span>
+          </div>
+        </div>
+
+        {/* Google OAuth Button */}
+        <GoogleAuthButton
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          loading={googleLoading}
+          disabled={isFormDisabled}
+          text="Continuar con Google"
+          variant="outlined"
+          size="md"
+          className="w-full"
+        />
 
         {/* Register Link */}
         {onRegister && (

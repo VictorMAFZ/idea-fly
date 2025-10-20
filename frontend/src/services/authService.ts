@@ -12,6 +12,7 @@ import {
   RegisterRequest,
   LoginRequest,
   GoogleOAuthRequest,
+  GoogleTokenRequest,
   AuthResponse,
   User,
   LogoutResponse,
@@ -27,6 +28,7 @@ const ENDPOINTS = {
   REGISTER: '/auth/register',
   LOGIN: '/auth/login',
   LOGOUT: '/auth/logout',
+  GOOGLE_OAUTH: '/auth/google',
   GOOGLE_CALLBACK: '/auth/google/callback',
   USER_PROFILE: '/users/me',
   REFRESH_TOKEN: '/auth/refresh',
@@ -372,6 +374,42 @@ class AuthService {
 
     if (response.success) {
       console.log('Email verified successfully');
+    }
+
+    return response;
+  }
+
+  /**
+   * Authenticate with Google OAuth using access token.
+   * 
+   * This method sends a Google OAuth access token to the backend
+   * for validation and user authentication/creation.
+   * 
+   * @param accessToken - Google OAuth access token
+   * @returns Promise resolving to authentication response
+   * 
+   * @example
+   * ```typescript
+   * const result = await authService.authenticateWithGoogle("ya29.a0ARrd...");
+   * 
+   * if (result.success) {
+   *   const { access_token, user } = result.data;
+   *   // Handle successful Google authentication
+   * }
+   * ```
+   */
+  async authenticateWithGoogle(accessToken: string): Promise<ApiResponse<AuthResponse>> {
+    if (!accessToken) {
+      throw new Error('Google access token is required');
+    }
+
+    const response = await httpClient.post<AuthResponse>(
+      ENDPOINTS.GOOGLE_OAUTH,
+      { access_token: accessToken } as GoogleTokenRequest
+    );
+
+    if (response.success && response.data) {
+      console.log('Google OAuth authentication successful via access token');
     }
 
     return response;

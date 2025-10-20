@@ -221,15 +221,23 @@ class AuthenticationService:
         """
         Authenticate user with email and password.
         
+        This method orchestrates the complete user login process:
+        1. Validates login credentials format
+        2. Attempts authentication with stored credentials
+        3. Updates user's last login timestamp
+        4. Generates JWT token for session management
+        5. Returns user profile and authentication token
+        
         Args:
-            login_data: User login credentials
+            login_data: User login credentials containing email and password
             
         Returns:
             Tuple[UserResponse, Token]: User profile and authentication token
             
         Raises:
-            InvalidCredentialsException: If credentials are invalid
-            UserNotFoundException: If user doesn't exist
+            InvalidCredentialsException: If email/password combination is invalid
+            UserNotFoundException: If user account doesn't exist
+            ValidationException: If login data format is invalid
             DatabaseException: If database operation fails
             
         Example:
@@ -245,38 +253,76 @@ class AuthenticationService:
         try:
             logger.info(f"🔄 Starting authentication for: {login_data.email}")
             
-            # Authenticate user credentials
+            # Step 1: Validate login data format
+            await self._validate_login_data(login_data)
+            
+            # Step 2: Authenticate user credentials
             user = await self.repository.authenticate_user(
-                login_data.email, 
+                login_data.email.lower().strip(), 
                 login_data.password
             )
             
             if not user:
                 logger.warning(f"❌ Authentication failed for: {login_data.email}")
-                raise InvalidCredentialsException()
+                raise InvalidCredentialsException("Correo o contraseña incorrectos")
             
-            # Update last login timestamp
+            # Step 3: Update last login timestamp
             await self.repository.update_user_last_login(user.id)
             
-            # Generate authentication token
+            # Step 4: Generate authentication token
             token_data = await self._create_token_for_user(
                 user, 
                 auth_method="password"
             )
             
-            # Convert to response format
+            # Step 5: Convert to response format
             user_response = await self._create_user_response(user)
             
-            logger.info(f"✅ Authentication successful: {user.email}")
+            logger.info(f"✅ Authentication successful: {user.email} (ID: {user.id})")
             
             return user_response, token_data
             
-        except InvalidCredentialsException:
-            # Re-raise authentication exceptions
+        except (InvalidCredentialsException, ValidationException):
+            # Re-raise authentication and validation exceptions
             raise
         except Exception as e:
             logger.error(f"❌ Unexpected error during authentication for {login_data.email}: {e}")
             raise DatabaseException("user authentication", str(e))
+
+    async def login_user(
+        self, 
+        email: str, 
+        password: str
+    ) -> Tuple[UserResponse, Token]:
+        """
+        Convenience method for user login with separate email and password parameters.
+        
+        This method is a convenience wrapper around authenticate_user that accepts
+        separate email and password parameters instead of a UserLoginRequest object.
+        
+        Args:
+            email: User email address
+            password: User password
+            
+        Returns:
+            Tuple[UserResponse, Token]: User profile and authentication token
+            
+        Raises:
+            InvalidCredentialsException: If email/password combination is invalid
+            ValidationException: If email format is invalid
+            DatabaseException: If database operation fails
+            
+        Example:
+            ```python
+            service = AuthenticationService(db)
+            user_profile, token = await service.login_user(
+                "juan@example.com", 
+                "securePassword123"
+            )
+            ```
+        """
+        login_data = UserLoginRequest(email=email, password=password)
+        return await self.authenticate_user(login_data)
 
     async def authenticate_oauth_user(
         self,
@@ -331,6 +377,124 @@ class AuthenticationService:
         except Exception as e:
             logger.error(f"❌ Unexpected error during OAuth authentication for {email}: {e}")
             raise DatabaseException("OAuth authentication", str(e))
+
+    async def verify_login_credentials(
+        self, 
+        email: str, 
+        password: str
+    ) -> bool:
+        """
+        Verify if login credentials are valid without generating tokens.
+        
+        This method is useful for credential verification without creating
+        a full authentication session.
+        
+        Args:
+            email: User email address
+            password: User password
+            
+        Returns:
+            bool: True if credentials are valid, False otherwise
+            
+        Example:
+            ```python
+            service = AuthenticationService(db)
+            is_valid = await service.verify_login_credentials(
+                "juan@example.com", 
+                "password123"
+            )
+            ```
+        """
+        try:
+            user = await self.repository.authenticate_user(
+                email.lower().strip(), 
+                password
+            )
+            return user is not None
+        except Exception as e:
+            logger.error(f"Error verifying credentials for {email}: {e}")
+            return False
+
+    async def get_login_attempts_count(self, email: str) -> int:
+        """
+        Get the number of failed login attempts for a user.
+        
+        This method can be used to implement rate limiting and
+        account security measures.
+        
+        Args:
+            email: User email address
+            
+        Returns:
+            int: Number of failed login attempts
+            
+        Note:
+            This is a placeholder for future implementation of
+            login attempt tracking.
+        """
+        # TODO: Implement login attempt tracking in repository
+        # For now, return 0 as the repository doesn't track attempts yet
+        logger.debug(f"Login attempts check for: {email} (not implemented)")
+        return 0
+
+    async def check_user_login_eligibility(self, email: str) -> Dict[str, Any]:
+        """
+        Check if user is eligible for login (active account, not locked, etc.).
+        
+        Args:
+            email: User email address
+            
+        Returns:
+            Dict[str, Any]: Login eligibility status and details
+            
+        Example:
+            ```python
+            service = AuthenticationService(db)
+            eligibility = await service.check_user_login_eligibility("juan@example.com")
+            if eligibility["eligible"]:
+                # Proceed with login
+            ```
+        """
+        try:
+            user = await self.repository.get_active_user_by_email(email.lower().strip())
+            
+            if not user:
+                return {
+                    "eligible": False,
+                    "reason": "USER_NOT_FOUND",
+                    "message": "No account found with this email address"
+                }
+            
+            if not user.is_active:
+                return {
+                    "eligible": False,
+                    "reason": "ACCOUNT_INACTIVE",
+                    "message": "Account is not active"
+                }
+            
+            # Check for OAuth-only users
+            if not user.hashed_password and user.auth_provider != AuthProvider.EMAIL:
+                return {
+                    "eligible": False,
+                    "reason": "OAUTH_ONLY_ACCOUNT",
+                    "message": "This account uses social login only. Please sign in with Google."
+                }
+            
+            return {
+                "eligible": True,
+                "reason": "ELIGIBLE",
+                "message": "User is eligible for login",
+                "user_id": str(user.id),
+                "auth_provider": user.auth_provider.value
+            }
+            
+        except Exception as e:
+            logger.error(f"Error checking login eligibility for {email}: {e}")
+            return {
+                "eligible": False,
+                "reason": "SYSTEM_ERROR",
+                "message": "Unable to verify account status"
+            }
 
     # ========================================================================
     # TOKEN MANAGEMENT METHODS
@@ -631,6 +795,39 @@ class AuthenticationService:
             created_at=user.created_at
         )
 
+    async def _validate_login_data(self, login_data: UserLoginRequest) -> None:
+        """
+        Validate login request data format and requirements.
+        
+        Args:
+            login_data: Login request data to validate
+            
+        Raises:
+            ValidationException: If validation fails
+        """
+        # Validate email format (additional business validation)
+        if not login_data.email or not login_data.email.strip():
+            raise create_validation_exception(
+                "email",
+                login_data.email,
+                "Email is required",
+                "MISSING_EMAIL"
+            )
+        
+        # Validate password presence
+        if not login_data.password or len(login_data.password.strip()) == 0:
+            raise create_validation_exception(
+                "password",
+                "[REDACTED]",
+                "Password is required", 
+                "MISSING_PASSWORD"
+            )
+        
+        # Normalize email to lowercase
+        login_data.email = login_data.email.lower().strip()
+        
+        logger.debug(f"Login data validation successful for: {login_data.email}")
+
     async def _validate_password_strength(self, password: str) -> None:
         """
         Validate password meets security requirements.
@@ -798,6 +995,61 @@ async def get_user_from_token(
     return await service.validate_token(token)
 
 
+async def verify_user_credentials(
+    db: Session,
+    email: str,
+    password: str
+) -> bool:
+    """
+    Convenience function to verify user credentials without generating tokens.
+    
+    Args:
+        db: Database session
+        email: User email address
+        password: User password
+        
+    Returns:
+        bool: True if credentials are valid, False otherwise
+        
+    Example:
+        ```python
+        is_valid = await verify_user_credentials(db, "juan@example.com", "password123")
+        if is_valid:
+            print("Credentials are valid")
+        ```
+    """
+    service = create_auth_service(db)
+    return await service.verify_login_credentials(email, password)
+
+
+async def check_login_eligibility(
+    db: Session,
+    email: str
+) -> Dict[str, Any]:
+    """
+    Convenience function to check if user is eligible for login.
+    
+    Args:
+        db: Database session
+        email: User email address
+        
+    Returns:
+        Dict[str, Any]: Login eligibility status and details
+        
+    Example:
+        ```python
+        eligibility = await check_login_eligibility(db, "juan@example.com")
+        if eligibility["eligible"]:
+            # Proceed with login
+            print("User can log in")
+        else:
+            print(f"Login blocked: {eligibility['message']}")
+        ```
+    """
+    service = create_auth_service(db)
+    return await service.check_user_login_eligibility(email)
+
+
 # ============================================================================
 # EXPORTS
 # ============================================================================
@@ -813,4 +1065,6 @@ __all__ = [
     "register_new_user_with_token",
     "login_user_with_credentials", 
     "get_user_from_token",
+    "verify_user_credentials",
+    "check_login_eligibility",
 ]

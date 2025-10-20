@@ -146,19 +146,11 @@ export function useAuth(): UseAuthReturn {
    */
   const loginWithService = useCallback(async (data: LoginRequest): Promise<void> => {
     try {
-      // Call authentication service
-      const response = await authService.login(data);
-      
-      if (response.success && response.data) {
-        // Use context's login method which handles state management
-        await login(data);
-      } else {
-        const errorMessage = response.error?.message || 'Login failed. Please check your credentials.';
-        throw new Error(errorMessage);
-      }
+      // Use context's login method which handles authService integration and state management
+      await login(data);
       
     } catch (error) {
-      // Error is handled by the context's login method
+      // Error is already handled by the context's login method
       throw error;
     }
   }, [login]);
@@ -176,19 +168,11 @@ export function useAuth(): UseAuthReturn {
    */
   const loginWithGoogleService = useCallback(async (data: GoogleOAuthRequest): Promise<void> => {
     try {
-      // Call authentication service
-      const response = await authService.googleCallback(data);
-      
-      if (response.success && response.data) {
-        // Use context's Google login method which handles state management
-        await loginWithGoogle(data);
-      } else {
-        const errorMessage = response.error?.message || 'Google login failed. Please try again.';
-        throw new Error(errorMessage);
-      }
+      // Use context's Google login method which handles authService integration and state management
+      await loginWithGoogle(data);
       
     } catch (error) {
-      // Error is handled by the context's loginWithGoogle method
+      // Error is already handled by the context's loginWithGoogle method
       throw error;
     }
   }, [loginWithGoogle]);

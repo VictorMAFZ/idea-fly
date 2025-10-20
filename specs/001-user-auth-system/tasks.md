@@ -76,9 +76,9 @@ description: "Task list for Sistema de Autenticación de Usuarios implementation
 
 ### Tests for User Story 1 (Optional - Constitution Compliance)
 
-- [ ] T026 [P] [US1] Create unit tests for registration service in `backend/tests/auth/test_auth_service.py`
-- [ ] T027 [P] [US1] Create integration tests for register endpoint in `backend/tests/auth/test_auth_endpoints.py`
-- [ ] T028 [P] [US1] Create component tests for RegisterForm in `frontend/tests/components/auth/RegisterForm.test.tsx`
+- [x] T026 [P] [US1] Create unit tests for registration service in `backend/tests/auth/test_auth_service.py`
+- [x] T027 [P] [US1] Create integration tests for register endpoint in `backend/tests/auth/test_auth_endpoints.py`
+- [x] T028 [P] [US1] Create component tests for RegisterForm in `frontend/tests/components/auth/RegisterForm.test.tsx`
 
 ---
 
@@ -90,13 +90,13 @@ description: "Task list for Sistema de Autenticación de Usuarios implementation
 
 ### Implementation for User Story 2
 
-- [ ] T029 [US2] Extend authentication service with login logic in `backend/src/auth/service.py`
-- [ ] T030 [US2] Create POST /auth/login endpoint in `backend/src/auth/router.py`
-- [ ] T031 [P] [US2] Create LoginForm component in `frontend/src/components/auth/LoginForm.tsx`
-- [ ] T032 [P] [US2] Extend authentication service with login function in `frontend/src/services/authService.ts`
-- [ ] T033 [P] [US2] Extend useAuth hook with login function in `frontend/src/hooks/useAuth.ts`
-- [ ] T034 [US2] Create login page in `frontend/src/pages/login.tsx`
-- [ ] T035 [US2] Integrate login flow with AuthContext in `frontend/src/contexts/AuthContext.tsx`
+- [x] T029 [US2] Extend authentication service with login logic in `backend/src/auth/service.py`
+- [x] T030 [US2] Create POST /auth/login endpoint in `backend/src/auth/router.py`
+- [x] T031 [P] [US2] Create LoginForm component in `frontend/src/components/auth/LoginForm.tsx`
+- [x] T032 [P] [US2] Extend authentication service with login function in `frontend/src/services/authService.ts`
+- [x] T033 [P] [US2] Extend useAuth hook with login function in `frontend/src/hooks/useAuth.ts`
+- [x] T034 [US2] Create login page in `frontend/src/pages/login.tsx`
+- [x] T035 [US2] Integrate login flow with AuthContext in `frontend/src/contexts/AuthContext.tsx`
 
 ### Tests for User Story 2 (Optional - Constitution Compliance)
 

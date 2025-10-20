@@ -16,9 +16,8 @@ from ..core.exceptions import (
     EmailExistsException,
     ValidationException,
     DatabaseException,
-    SecurityException,
-    AuthenticationException,
-    handle_api_exception
+    ServerException,
+    AuthenticationException
 )
 from .schemas import (
     UserRegistrationRequest,
@@ -180,13 +179,13 @@ async def register_user(
             }
         )
         
-    except SecurityException as e:
-        logger.error(f"Registration failed - security error: {e.error_message}")
+    except ServerException as e:
+        logger.error(f"Registration failed - server error: {e.error_message}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
                 "error_code": e.error_code.value,
-                "message": "Internal security error occurred",
+                "message": "Internal server error occurred",
                 "details": None
             }
         )
@@ -209,6 +208,131 @@ async def register_user(
             detail={
                 "error_code": "INTERNAL_ERROR",
                 "message": "An unexpected error occurred",
+                "details": None
+            }
+        )
+
+
+@router.post(
+    "/login", 
+    response_model=AuthResponse,
+    status_code=status.HTTP_200_OK,
+    summary="User login",
+    description="Authenticate user with email and password, return JWT token",
+    operation_id="loginUser"
+)
+async def login_user(
+    login_data: UserLoginRequest,
+    auth_service: Annotated[AuthenticationService, Depends(get_auth_service)]
+) -> AuthResponse:
+    """
+    Authenticate user with email and password.
+    
+    This endpoint handles user login by validating credentials and returning
+    a JWT token for session management. The token should be included in
+    subsequent requests via Authorization header.
+    
+    Args:
+        login_data: User login credentials (email and password)
+        auth_service: Authentication service from dependency injection
+        
+    Returns:
+        AuthResponse: User profile and JWT token
+        
+    Raises:
+        HTTPException 400: Invalid input format
+        HTTPException 401: Invalid credentials or inactive account
+        HTTPException 500: Internal server error
+        
+    Example:
+        ```
+        POST /auth/login
+        {
+            "email": "juan.perez@example.com",
+            "password": "securePassword123"
+        }
+        
+        Response:
+        {
+            "user": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "name": "Juan Pérez",
+                "email": "juan.perez@example.com",
+                "email_verified": true,
+                "is_active": true,
+                "created_at": "2025-10-20T10:30:00Z",
+                "last_login": "2025-10-20T15:45:00Z"
+            },
+            "token": {
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "token_type": "bearer",
+                "expires_in": 86400
+            }
+        }
+        ```
+    """
+    try:
+        logger.info(f"Login attempt for email: {login_data.email}")
+        
+        # Authenticate user and generate token
+        user_profile, token = await auth_service.authenticate_user(login_data)
+        
+        logger.info(f"Login successful for user: {user_profile.id}")
+        
+        # Return token as AuthResponse (per API contract)
+        return token
+        
+    except ValidationException as e:
+        logger.warning(f"Login validation failed for {login_data.email}: {e.message}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": e.error_code or "VALIDATION_ERROR",
+                "message": e.message,
+                "details": e.details
+            }
+        )
+        
+    except AuthenticationException as e:
+        logger.warning(f"Authentication failed for {login_data.email}: {e.message}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "error_code": e.error_code or "INVALID_CREDENTIALS", 
+                "message": e.message or "Email or password is incorrect",
+                "details": None
+            }
+        )
+        
+    except DatabaseException as e:
+        logger.error(f"Database error during login for {login_data.email}: {e.message}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "DATABASE_ERROR",
+                "message": "A database error occurred during login",
+                "details": None
+            }
+        )
+        
+    except ServerException as e:
+        logger.error(f"Server error during login for {login_data.email}: {e.message}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": e.error_code or "SERVER_ERROR",
+                "message": e.message or "An internal server error occurred",
+                "details": None
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Login failed - unexpected error for {login_data.email}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "INTERNAL_ERROR",
+                "message": "An unexpected error occurred during login",
                 "details": None
             }
         )

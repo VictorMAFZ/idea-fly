@@ -141,7 +141,7 @@ def get_engine() -> Engine:
     if _engine is None:
         settings = get_settings()
         _engine = create_database_engine(
-            echo=settings.ENVIRONMENT == "development"
+            echo=settings.environment == "development"
         )
     
     return _engine

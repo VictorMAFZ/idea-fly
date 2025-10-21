@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from '../contexts/AuthContext';
+import ErrorBoundary from '../components/ErrorBoundary';
 import '../styles/globals.css';
 
 export const metadata: Metadata = {
@@ -27,17 +28,19 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="min-h-screen bg-gray-50">
-        {googleClientId ? (
-          <GoogleOAuthProvider clientId={googleClientId}>
+        <ErrorBoundary>
+          {googleClientId ? (
+            <GoogleOAuthProvider clientId={googleClientId}>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </GoogleOAuthProvider>
+          ) : (
             <AuthProvider>
               {children}
             </AuthProvider>
-          </GoogleOAuthProvider>
-        ) : (
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        )}
+          )}
+        </ErrorBoundary>
       </body>
     </html>
   );

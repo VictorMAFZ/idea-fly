@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '../../hooks/useAuth';
 import { Header } from '../../components/layout';
 import { withProtectedRoute } from '../../components/ProtectedRoute';
+import { DashboardLoading } from '../../components/LoadingComponents';
 
 function DashboardPage() {
   const user = useCurrentUser();

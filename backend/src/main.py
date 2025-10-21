@@ -22,11 +22,15 @@ from starlette.middleware.gzip import GZipMiddleware
 from .core.config import get_settings
 from .core.database import init_database, close_database
 from .core.logging_config import setup_logging
+from .core.logging import configure_logging, default_logger
+from .core.middleware import setup_logging_middleware
+from .core.security_middleware import setup_security_middleware
 from .core.exceptions import (
     BaseAPIException,
     is_api_exception,
     get_error_code_from_exception,
 )
+from .api.health import include_health_routers
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -196,10 +200,35 @@ def configure_middleware(app: FastAPI) -> None:
     Note:
         Middleware is applied in reverse order (last added = first executed)
     """
-    # Security headers (applied last = executed first)
-    app.add_middleware(SecurityHeadersMiddleware)
+    # Configure structured logging
+    logger_instance = configure_logging(
+        environment=settings.environment,
+        log_level=getattr(settings, 'log_level', 'INFO'),
+        service_name="ideafly-backend"
+    )
     
-    # Request/response logging
+    # Setup comprehensive security middleware
+    setup_security_middleware(
+        app,
+        environment=settings.environment,
+        logger=logger_instance,
+        enable_rate_limiting=not settings.api_debug,  # Disable rate limiting in debug mode
+        enable_request_size_limit=True,
+        max_request_size=10 * 1024 * 1024  # 10MB
+    )
+    
+    # Setup comprehensive logging middleware
+    setup_logging_middleware(
+        app,
+        logger=logger_instance,
+        enable_request_logging=True,
+        enable_security_logging=True,
+        enable_error_logging=True,
+        log_request_body=settings.api_debug,  # Only log bodies in debug mode
+        log_response_body=False
+    )
+    
+    # Keep existing custom middleware for backward compatibility
     app.add_middleware(LoggingMiddleware)
     
     # GZip compression for large responses
@@ -359,19 +388,8 @@ def register_routes(app: FastAPI) -> None:
     Note:
         Routes will be registered when the corresponding modules are implemented
     """
-    # Health check endpoint
-    @app.get("/health", tags=["health"])
-    async def health_check():
-        """Basic health check endpoint."""
-        return {
-            "success": True,
-            "data": {
-                "status": "healthy",
-                "service": "ideafly-auth-api",
-                "version": "1.0.0"
-            },
-            "error": None
-        }
+    # Register comprehensive health and monitoring endpoints
+    include_health_routers(app)
     
     # Root endpoint
     @app.get("/", tags=["root"])
@@ -382,8 +400,16 @@ def register_routes(app: FastAPI) -> None:
             "data": {
                 "message": "IdeaFly Authentication API",
                 "version": "1.0.0",
+                "environment": settings.environment,
                 "docs": "/docs" if settings.api_debug else "Not available in production",
-                "health": "/health"
+                "health": "/health",
+                "metrics": "/metrics",
+                "monitoring": {
+                    "health_detailed": "/health/detailed",
+                    "readiness": "/health/ready", 
+                    "liveness": "/health/live",
+                    "metrics_prometheus": "/metrics/prometheus"
+                }
             },
             "error": None
         }

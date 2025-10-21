@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # Database Configuration
     database_url: str = Field(..., env="DATABASE_URL")
     db_host: str = Field(default="localhost", env="DB_HOST")
-    db_port: int = Field(default=5432, env="DB_PORT")
+    db_port: int = Field(default=5433, env="DB_PORT")
     db_name: str = Field(default="ideafly", env="DB_NAME")
     db_user: str = Field(default="postgres", env="DB_USER")
     db_password: str = Field(..., env="DB_PASSWORD")

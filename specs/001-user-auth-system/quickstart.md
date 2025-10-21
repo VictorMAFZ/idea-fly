@@ -22,7 +22,7 @@ pip install pydantic[email] httpx
 
 # Environment variables (.env)
 JWT_SECRET_KEY=your-super-secret-jwt-key-here
-DATABASE_URL=postgresql://user:password@localhost:5432/ideafly_auth
+DATABASE_URL=postgresql://user:password@localhost:5433/ideafly_auth
 GOOGLE_CLIENT_ID=your-google-oauth-client-id
 GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
 ```
@@ -439,5 +439,5 @@ uvicorn src.main:app --reload --log-level debug
 npm run dev -- --debug
 
 # Database connection test
-psql postgresql://user:password@localhost:5432/ideafly_auth
+psql postgresql://user:password@localhost:5433/ideafly_auth
 ```

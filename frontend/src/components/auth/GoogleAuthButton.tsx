@@ -49,30 +49,59 @@ export function GoogleAuthButton({
   const [isLoading, setIsLoading] = useState(false);
 
   const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
+    onSuccess: async (codeResponse) => {
       try {
         setIsLoading(true);
+        console.log('Google OAuth Code Response:', codeResponse);
         
-        // The tokenResponse contains the access_token we need
-        if (tokenResponse.access_token) {
-          onSuccess(tokenResponse.access_token);
+        // With authorization code flow, we get a code instead of access_token
+        if (codeResponse.code) {
+          // Exchange the code for JWT token on our backend
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/google/code`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ code: codeResponse.code }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail?.message || 'Authentication failed');
+          }
+
+          const authData = await response.json();
+          onSuccess(authData.access_token);
         } else {
-          throw new Error('No access token received from Google');
+          throw new Error('No authorization code received from Google');
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Google authentication failed';
+        console.error('OAuth Error:', error);
         onError(errorMessage);
       } finally {
         setIsLoading(false);
       }
     },
     onError: (error) => {
-      console.error('Google OAuth Error:', error);
-      onError('Google authentication failed. Please try again.');
+      console.error('Google OAuth Error Details:', error);
+      console.log('Current URL:', window.location.href);
+      console.log('Origin:', window.location.origin);
+      console.log('Protocol:', window.location.protocol);
+      console.log('Host:', window.location.host);
+      console.log('Hostname:', window.location.hostname);
+      console.log('Port:', window.location.port);
+      
+      // Let's also check what redirect_uri Google is expecting
+      if (error && typeof error === 'object' && 'error' in error) {
+        console.log('Google Error Object:', error);
+      }
+      
+      onError(`Google authentication failed. Please check console for details.`);
       setIsLoading(false);
     },
-    scope: 'email profile',
-    flow: 'implicit', // Using implicit flow for access token
+    scope: 'openid email profile',
+    flow: 'auth-code',
   });
 
   const handleClick = () => {

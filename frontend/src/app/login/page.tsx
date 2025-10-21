@@ -298,11 +298,6 @@ export default function LoginPage() {
 
 /**
  * Page metadata for SEO and browser tab
- * This would be handled by metadata export in the page file for static metadata
- * or generateMetadata function for dynamic metadata
+ * Note: Metadata cannot be exported from client components.
+ * This should be handled at the layout level or in a separate metadata file.
  */
-export const metadata = {
-  title: 'Iniciar Sesión - IdeaFly',
-  description: 'Inicia sesión en tu cuenta de IdeaFly para acceder a tus proyectos y colaboraciones.',
-  robots: 'noindex, nofollow', // Prevent indexing of auth pages
-};

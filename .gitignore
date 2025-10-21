@@ -120,3 +120,7 @@ logs
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Google OAuth Credentials (SENSITIVE - DO NOT COMMIT)
+backend/google_credentials.json
+**/client_secret*.json

@@ -9,7 +9,7 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { LoginRequest, AuthStatus } from '../../types/auth';
-import { GoogleAuthButton } from './GoogleAuthButton';
+import GoogleAuthButtonAlternative from './GoogleAuthButtonAlternative';
 import { useGoogleAuth } from '../../hooks/useGoogleAuth';
 import { LoadingButton, LoadingSpinner } from '../LoadingComponents';
 
@@ -542,15 +542,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         </div>
 
         {/* Google OAuth Button */}
-        <GoogleAuthButton
+        <GoogleAuthButtonAlternative
           onSuccess={handleGoogleSuccess}
           onError={handleGoogleError}
-          loading={googleLoading}
           disabled={isFormDisabled}
-          text="Continuar con Google"
-          variant="outlined"
-          size="md"
-          className="w-full"
         />
 
         {/* Register Link */}

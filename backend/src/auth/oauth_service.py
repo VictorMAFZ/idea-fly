@@ -281,6 +281,104 @@ class GoogleOAuthService:
             logger.error(f"Error creating/updating OAuth user: {str(e)}")
             raise ValidationException("Failed to process user information")
     
+    async def authenticate_with_google_code(
+        self, 
+        authorization_code: str,
+        db: Session
+    ) -> Token:
+        """
+        Authenticate user with Google OAuth authorization code.
+        
+        This method exchanges the authorization code for an access token,
+        then validates the token and creates/finds the user.
+        
+        Args:
+            authorization_code: Google OAuth authorization code
+            db: Database session
+            
+        Returns:
+            Token: JWT token with user information
+            
+        Raises:
+            AuthenticationException: Invalid code or authentication failure
+            ValidationException: Invalid user data
+        """
+        try:
+            logger.info("Starting Google OAuth code exchange")
+            
+            # Step 1: Exchange code for access token
+            access_token = await self._exchange_code_for_token(authorization_code)
+            logger.info("Successfully exchanged code for access token")
+            
+            # Step 2: Use existing authentication flow with the access token
+            return await self.authenticate_with_google(access_token, db)
+            
+        except AuthenticationException:
+            logger.warning("Google OAuth code authentication failed")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during Google OAuth code exchange: {str(e)}")
+            raise AuthenticationException("Authentication failed due to server error")
+    
+    async def _exchange_code_for_token(self, authorization_code: str) -> str:
+        """
+        Exchange Google OAuth authorization code for access token.
+        
+        Args:
+            authorization_code: Google OAuth authorization code
+            
+        Returns:
+            str: Google OAuth access token
+            
+        Raises:
+            AuthenticationException: Code exchange failed
+        """
+        try:
+            import os
+            
+            # Get client credentials from environment
+            client_id = os.getenv("GOOGLE_CLIENT_ID")
+            client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
+            
+            if not client_id or not client_secret:
+                raise AuthenticationException("Google OAuth credentials not configured")
+            
+            # Prepare token exchange request
+            token_data = {
+                "code": authorization_code,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": "postmessage",  # For JavaScript origin
+                "grant_type": "authorization_code"
+            }
+            
+            # Exchange code for token
+            response = await self.http_client.post(
+                "https://oauth2.googleapis.com/token",
+                data=token_data,
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"Token exchange failed: {response.status_code} - {response.text}")
+                raise AuthenticationException("Invalid authorization code")
+            
+            token_response = response.json()
+            access_token = token_response.get("access_token")
+            
+            if not access_token:
+                logger.error("No access token in response")
+                raise AuthenticationException("Token exchange failed")
+            
+            return access_token
+            
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error during token exchange: {str(e)}")
+            raise AuthenticationException("Token exchange failed due to network error")
+        except Exception as e:
+            logger.error(f"Unexpected error during token exchange: {str(e)}")
+            raise AuthenticationException("Token exchange failed")
+    
     async def close(self):
         """Clean up HTTP client resources."""
         await self.http_client.aclose()

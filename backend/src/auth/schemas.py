@@ -164,6 +164,26 @@ class GoogleTokenRequest(BaseModel):
         }
 
 
+class GoogleAuthCodeRequest(BaseModel):
+    """Schema for Google OAuth authorization code authentication."""
+    
+    code: str = Field(
+        ...,
+        min_length=1,
+        max_length=2048,
+        description="Google OAuth authorization code obtained from client",
+        example="4/0AY0e-g7H8X9Y2Z3A4B5C6D7E8F9G0H1I2J3K4L5M6N7O8P9Q0R1S2T3U4V5W6X7Y8Z9"
+    )
+
+    class Config:
+        """Pydantic configuration."""
+        schema_extra = {
+            "example": {
+                "code": "4/0AY0e-g7H8X9Y2Z3A4B5C6D7E8F9G0H1I2J3K4L5M6N7O8P9Q0R1S2T3U4V5W6X7Y8Z9"
+            }
+        }
+
+
 # Response Schemas (Output DTOs)
 
 class Token(BaseModel):
@@ -446,6 +466,7 @@ __all__ = [
     "UserLoginRequest", 
     "GoogleOAuthRequest",
     "GoogleTokenRequest",
+    "GoogleAuthCodeRequest",
     
     # Response schemas
     "Token",

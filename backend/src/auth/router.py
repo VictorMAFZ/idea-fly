@@ -23,6 +23,7 @@ from .schemas import (
     UserRegistrationRequest,
     UserLoginRequest,
     GoogleTokenRequest,
+    GoogleAuthCodeRequest,
     AuthResponse,
     UserResponse,
     ErrorResponse,
@@ -465,6 +466,136 @@ async def authenticate_with_google(
             detail={
                 "error_code": "OAUTH_SERVER_ERROR", 
                 "message": "An unexpected error occurred during OAuth authentication",
+                "details": None
+            }
+        )
+
+
+@router.post(
+    "/google/code",
+    response_model=AuthResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Authenticate with Google OAuth authorization code",
+    description="""
+    Authenticate user using Google OAuth authorization code.
+    
+    This endpoint accepts a Google OAuth authorization code obtained from the frontend
+    using the authorization code flow and exchanges it for an access token, then validates 
+    it with Google's API. If valid, it either:
+    - Returns existing user if account exists
+    - Creates new account for new users
+    - Links OAuth to existing email account
+    
+    **Security Features:**
+    - Secure code exchange for access token
+    - Token validation with Google API
+    - Automatic user linking by email
+    - Secure JWT generation
+    - Comprehensive audit logging
+    
+    **Flow:**
+    1. Frontend obtains Google OAuth authorization code
+    2. Sends code to this endpoint
+    3. Backend exchanges code for access token
+    4. Backend validates token with Google
+    5. User created/found/linked
+    6. JWT token returned
+    """,
+    responses={
+        200: {
+            "description": "OAuth authentication successful",
+            "model": AuthResponse
+        },
+        400: {
+            "description": "Invalid request format",
+            "model": ErrorResponse
+        },
+        401: {
+            "description": "Invalid or expired Google authorization code",
+            "model": ErrorResponse
+        },
+        422: {
+            "description": "Validation errors in request data",
+            "model": ErrorResponse
+        },
+        500: {
+            "description": "Internal server error during OAuth process",
+            "model": ErrorResponse
+        }
+    }
+)
+async def authenticate_with_google_code(
+    oauth_request: GoogleAuthCodeRequest,
+    db: Annotated[Session, Depends(get_db_session)],
+    oauth_service: Annotated[GoogleOAuthService, Depends(get_google_oauth_service)]
+) -> AuthResponse:
+    """
+    Authenticate user with Google OAuth authorization code.
+    
+    Args:
+        oauth_request: Request containing Google OAuth authorization code
+        db: Database session from dependency injection
+        oauth_service: Google OAuth service from dependency injection
+        
+    Returns:
+        AuthResponse: JWT token and user information
+        
+    Raises:
+        HTTPException: Various HTTP errors based on authentication result
+    """
+    try:
+        logger.info("Processing Google OAuth authorization code authentication request")
+        
+        # Authenticate with Google OAuth service using authorization code
+        token_response = await oauth_service.authenticate_with_google_code(
+            authorization_code=oauth_request.code,
+            db=db
+        )
+        
+        logger.info(f"Google OAuth code authentication successful for user: {token_response.user.email}")
+        
+        return token_response
+        
+    except AuthenticationException as e:
+        logger.warning(f"Google OAuth code authentication failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "error_code": "OAUTH_CODE_AUTHENTICATION_FAILED",
+                "message": str(e),
+                "details": "Please ensure you are using a valid Google OAuth authorization code"
+            }
+        )
+        
+    except ValidationException as e:
+        logger.warning(f"Google OAuth code validation error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error_code": "OAUTH_CODE_VALIDATION_ERROR",
+                "message": str(e),
+                "details": "User information from Google could not be processed"
+            }
+        )
+        
+    except DatabaseException as e:
+        logger.error(f"Database error during Google OAuth code: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "DATABASE_ERROR",
+                "message": "Failed to process OAuth authentication",
+                "details": None
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Unexpected error during Google OAuth code: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "OAUTH_CODE_SERVER_ERROR", 
+                "message": "An unexpected error occurred during OAuth code authentication",
                 "details": None
             }
         )

@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, Request, Response, HTTPException, status
-from fastapi.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.base import BaseHTTPMiddleware as StarletteBaseHTTPMiddleware

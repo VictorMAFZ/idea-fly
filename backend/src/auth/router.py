@@ -17,8 +17,7 @@ from ..core.exceptions import (
     ValidationException,
     DatabaseException,
     ServerException,
-    AuthenticationException,
-    AuthenticationError
+    AuthenticationException
 )
 from .schemas import (
     UserRegistrationRequest,
@@ -426,7 +425,7 @@ async def authenticate_with_google(
         
         return token_response
         
-    except AuthenticationError as e:
+    except AuthenticationException as e:
         logger.warning(f"Google OAuth authentication failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

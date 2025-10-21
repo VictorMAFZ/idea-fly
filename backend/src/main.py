@@ -22,7 +22,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from .core.config import get_settings
 from .core.database import init_database, close_database
 from .core.logging_config import setup_logging
-from .core.logging import configure_logging, default_logger
+from .core.logging import configure_production_logging, configure_development_logging, get_logger_for_module
 from .core.middleware import setup_logging_middleware
 from .core.security_middleware import setup_security_middleware
 from .core.exceptions import (
@@ -201,16 +201,16 @@ def configure_middleware(app: FastAPI) -> None:
         Middleware is applied in reverse order (last added = first executed)
     """
     # Configure structured logging
-    logger_instance = configure_logging(
-        environment=settings.environment,
-        log_level=getattr(settings, 'log_level', 'INFO'),
-        service_name="ideafly-backend"
-    )
+    logger_instance = get_logger_for_module(__name__)
+    if getattr(settings, 'environment', 'development') == 'production':
+        configure_production_logging()
+    else:
+        configure_development_logging()
     
-    # Setup comprehensive security middleware
+    # Setup comprehensive security middleware 
     setup_security_middleware(
         app,
-        environment=settings.environment,
+        environment=getattr(settings, 'environment', 'development'),
         logger=logger_instance,
         enable_rate_limiting=not settings.api_debug,  # Disable rate limiting in debug mode
         enable_request_size_limit=True,

@@ -54,13 +54,13 @@ def get_database_url() -> str:
     """
     settings = get_settings()
     
-    if not settings.DATABASE_URL:
+    if not settings.database_url:
         raise ValueError(
             "DATABASE_URL must be configured. "
             "Set it in .env file or environment variables."
         )
     
-    return settings.DATABASE_URL
+    return settings.database_url
 
 
 def create_database_engine(

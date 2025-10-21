@@ -11,7 +11,7 @@ from typing import Callable, Optional
 from urllib.parse import parse_qs, urlparse
 
 from fastapi import FastAPI, Request, Response
-from fastapi.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from .logging import (

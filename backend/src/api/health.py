@@ -20,9 +20,17 @@ from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database import get_db
-from ..core.logging import StructuredLogger, default_logger, LogCategory
+from ..core.database import get_db_session
+from ..core.logging import StructuredLogger, get_logger_for_module, LogCategory
 from ..core.config import get_settings
+
+# Initialize module logger
+default_logger = get_logger_for_module(__name__)
+
+# Create get_db dependency for FastAPI
+def get_db():
+    """FastAPI dependency to get database session."""
+    return get_db_session()
 
 
 # ============================================================================

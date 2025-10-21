@@ -11,18 +11,20 @@ This module provides secure Google OAuth integration following Azure best practi
 
 import httpx
 import logging
+import asyncio
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 
+from fastapi import Depends
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 
-from ..core.database import get_db
+from ..core.database import get_db_session
 from ..core.security import create_access_token
 from .models import User, OAuthProfile, AuthProvider, OAuthProviderType
 from .repository import UserRepository
 from .schemas import Token, UserResponse
-from ..core.exceptions import AuthenticationError, ValidationError
+from ..core.exceptions import AuthenticationException, ValidationException
 
 
 # Configure logging for OAuth operations
@@ -88,8 +90,8 @@ class GoogleOAuthService:
             Token: JWT token with user information
             
         Raises:
-            AuthenticationError: Invalid token or authentication failure
-            ValidationError: Invalid user data
+            AuthenticationException: Invalid token or authentication failure
+            ValidationException: Invalid user data
         """
         try:
             logger.info("Starting Google OAuth authentication")
@@ -122,12 +124,12 @@ class GoogleOAuthService:
                 )
             )
             
-        except AuthenticationError:
+        except AuthenticationException:
             logger.warning("Google OAuth authentication failed")
             raise
         except Exception as e:
             logger.error(f"Unexpected error during Google OAuth: {str(e)}")
-            raise AuthenticationError("Authentication failed due to server error")
+            raise AuthenticationException("Authentication failed due to server error")
     
     async def _validate_google_token(self, access_token: str) -> GoogleUserInfo:
         """
@@ -142,7 +144,7 @@ class GoogleOAuthService:
             GoogleUserInfo: Validated user information
             
         Raises:
-            AuthenticationError: Invalid or expired token
+            AuthenticationException: Invalid or expired token
         """
         max_retries = 3
         base_delay = 1.0  # seconds
@@ -162,7 +164,7 @@ class GoogleOAuthService:
                 
                 if response.status_code == 401:
                     logger.warning("Invalid Google OAuth token")
-                    raise AuthenticationError("Invalid or expired Google token")
+                    raise AuthenticationException("Invalid or expired Google token")
                 
                 response.raise_for_status()
                 user_data = response.json()
@@ -170,14 +172,14 @@ class GoogleOAuthService:
                 # Validate required fields
                 if not user_data.get("verified_email"):
                     logger.warning("Google account email not verified")
-                    raise AuthenticationError("Google account email must be verified")
+                    raise AuthenticationException("Google account email must be verified")
                 
                 logger.debug(f"Google user info retrieved: {user_data.get('email')}")
                 return GoogleUserInfo(**user_data)
                 
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 401:
-                    raise AuthenticationError("Invalid Google OAuth token")
+                    raise AuthenticationException("Invalid Google OAuth token")
                 
                 # Retry on server errors (5xx)
                 if e.response.status_code >= 500 and attempt < max_retries - 1:
@@ -187,7 +189,7 @@ class GoogleOAuthService:
                     continue
                 
                 logger.error(f"Google API error: {e.response.status_code}")
-                raise AuthenticationError("Failed to validate Google token")
+                raise AuthenticationException("Failed to validate Google token")
                 
             except httpx.RequestError as e:
                 if attempt < max_retries - 1:
@@ -197,9 +199,9 @@ class GoogleOAuthService:
                     continue
                 
                 logger.error(f"Network error connecting to Google: {str(e)}")
-                raise AuthenticationError("Unable to connect to Google services")
+                raise AuthenticationException("Unable to connect to Google services")
         
-        raise AuthenticationError("Failed to validate Google token after retries")
+        raise AuthenticationException("Failed to validate Google token after retries")
     
     async def _verify_token_info(self, access_token: str) -> None:
         """
@@ -209,7 +211,7 @@ class GoogleOAuthService:
             access_token: Google OAuth access token
             
         Raises:
-            AuthenticationError: Invalid token
+            AuthenticationException: Invalid token
         """
         try:
             response = await self.http_client.get(
@@ -219,7 +221,7 @@ class GoogleOAuthService:
             
             if response.status_code != 200:
                 logger.warning("Google token info validation failed")
-                raise AuthenticationError("Invalid Google token")
+                raise AuthenticationException("Invalid Google token")
                 
             token_info = response.json()
             
@@ -227,11 +229,11 @@ class GoogleOAuthService:
             scope = token_info.get("scope", "")
             if "email" not in scope or "profile" not in scope:
                 logger.warning("Insufficient Google OAuth scope")
-                raise AuthenticationError("Insufficient permissions from Google")
+                raise AuthenticationException("Insufficient permissions from Google")
                 
         except httpx.RequestError as e:
             logger.error(f"Error verifying Google token: {str(e)}")
-            raise AuthenticationError("Unable to verify Google token")
+            raise AuthenticationException("Unable to verify Google token")
     
     async def _find_or_create_oauth_user(
         self, 
@@ -249,7 +251,7 @@ class GoogleOAuthService:
             User: Found or created user
             
         Raises:
-            ValidationError: Invalid user data
+            ValidationException: Invalid user data
         """
         try:
             # Use the existing OAuth authentication method from repository
@@ -277,7 +279,7 @@ class GoogleOAuthService:
             
         except Exception as e:
             logger.error(f"Error creating/updating OAuth user: {str(e)}")
-            raise ValidationError("Failed to process user information")
+            raise ValidationException("Failed to process user information")
     
     async def close(self):
         """Clean up HTTP client resources."""
@@ -285,7 +287,7 @@ class GoogleOAuthService:
 
 
 # Dependency injection for FastAPI  
-def get_google_oauth_service(db: Session = Depends(get_db)) -> GoogleOAuthService:
+def get_google_oauth_service(db: Session = Depends(get_db_session)) -> GoogleOAuthService:
     """
     Dependency provider for Google OAuth service.
     
@@ -295,6 +297,4 @@ def get_google_oauth_service(db: Session = Depends(get_db)) -> GoogleOAuthServic
     return GoogleOAuthService(db)
 
 
-# Import asyncio at the end to avoid circular imports
-import asyncio
-from fastapi import Depends
+# Dependencies imported at the top

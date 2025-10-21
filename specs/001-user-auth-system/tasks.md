@@ -114,21 +114,21 @@ description: "Task list for Sistema de Autenticación de Usuarios implementation
 
 ### Implementation for User Story 3
 
-- [ ] T039 [US3] Implement Google OAuth service in `backend/src/auth/oauth_service.py`
-- [ ] T040 [US3] Create POST /auth/google/callback endpoint in `backend/src/auth/router.py`
-- [ ] T041 [US3] Extend user repository with OAuth user creation in `backend/src/auth/repository.py`
-- [ ] T042 [P] [US3] Create GoogleAuthButton component in `frontend/src/components/auth/GoogleAuthButton.tsx`
-- [ ] T043 [P] [US3] Create Google OAuth hook in `frontend/src/hooks/useGoogleAuth.ts`
-- [ ] T044 [P] [US3] Extend authentication service with OAuth functions in `frontend/src/services/authService.ts`
-- [ ] T045 [US3] Setup Google OAuth provider in `frontend/src/pages/_app.tsx`
-- [ ] T046 [US3] Integrate Google auth with existing forms in `frontend/src/components/auth/RegisterForm.tsx` and `frontend/src/components/auth/LoginForm.tsx`
-- [ ] T047 [US3] Extend AuthContext with Google OAuth flow in `frontend/src/contexts/AuthContext.tsx`
+- [x] T039 [US3] Implement Google OAuth service in `backend/src/auth/oauth_service.py`
+- [x] T040 [US3] Create POST /auth/google/callback endpoint in `backend/src/auth/router.py`
+- [x] T041 [US3] Extend user repository with OAuth user creation in `backend/src/auth/repository.py`
+- [x] T042 [P] [US3] Create GoogleAuthButton component in `frontend/src/components/auth/GoogleAuthButton.tsx`
+- [x] T043 [P] [US3] Create Google OAuth hook in `frontend/src/hooks/useGoogleAuth.ts`
+- [x] T044 [P] [US3] Extend authentication service with OAuth functions in `frontend/src/services/authService.ts`
+- [x] T045 [US3] Setup Google OAuth provider in `frontend/src/pages/_app.tsx`
+- [x] T046 [US3] Integrate Google auth with existing forms in `frontend/src/components/auth/RegisterForm.tsx` and `frontend/src/components/auth/LoginForm.tsx`
+- [x] T047 [US3] Extend AuthContext with Google OAuth flow in `frontend/src/contexts/AuthContext.tsx`
 
 ### Tests for User Story 3 (Optional - Constitution Compliance)
 
-- [ ] T048 [P] [US3] Create unit tests for OAuth service in `backend/tests/auth/test_oauth_service.py`
-- [ ] T049 [P] [US3] Create integration tests for OAuth flow in `backend/tests/auth/test_oauth_flow.py`
-- [ ] T050 [P] [US3] Create component tests for GoogleAuthButton in `frontend/tests/components/auth/GoogleAuthButton.test.tsx`
+- [x] T048 [P] [US3] Create unit tests for OAuth service in `backend/tests/auth/test_oauth_service.py`
+- [x] T049 [P] [US3] Create integration tests for OAuth flow in `backend/tests/auth/test_oauth_flow.py`
+- [x] T050 [P] [US3] Create component tests for GoogleAuthButton in `frontend/tests/components/auth/GoogleAuthButton.test.tsx`
 
 ---
 

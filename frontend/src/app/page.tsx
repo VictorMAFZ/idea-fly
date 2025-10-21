@@ -8,7 +8,8 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useIsAuthenticated, useCurrentUser } from '../hooks/useAuth';
+import { useIsAuthenticated, useCurrentUser, useAuth } from '../hooks/useAuth';
+import { LogoutButton } from '../components/auth';
 
 export default function HomePage() {
   const router = useRouter();
@@ -37,15 +38,32 @@ export default function HomePage() {
                   <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
                     <div className="rounded-md shadow">
                       <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                        <p className="text-green-800">
-                          ¡Hola, {user.name}! Ya tienes una sesión activa.
-                        </p>
-                        <button
-                          onClick={() => router.push('/dashboard')}
-                          className="mt-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                        >
-                          Ir al Dashboard
-                        </button>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-green-800">
+                              ¡Hola, {user.name}! Ya tienes una sesión activa.
+                            </p>
+                            <button
+                              onClick={() => router.push('/dashboard')}
+                              className="mt-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                            >
+                              Ir al Dashboard
+                            </button>
+                          </div>
+                          <div className="ml-4">
+                            <LogoutButton
+                              variant="outlined"
+                              size="sm"
+                              onSuccess={() => {
+                                console.log('Usuario desconectado exitosamente');
+                                router.push('/login');
+                              }}
+                              onError={(error) => {
+                                console.error('Error al cerrar sesión:', error);
+                              }}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

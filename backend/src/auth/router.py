@@ -26,10 +26,13 @@ from .schemas import (
     GoogleTokenRequest,
     AuthResponse,
     UserResponse,
-    ErrorResponse
+    ErrorResponse,
+    LogoutResponse
 )
 from .service import create_auth_service, AuthenticationService
 from .oauth_service import GoogleOAuthService, get_google_oauth_service
+from ..dependencies.auth import get_current_user
+from .models import User
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -463,6 +466,71 @@ async def authenticate_with_google(
             detail={
                 "error_code": "OAUTH_SERVER_ERROR", 
                 "message": "An unexpected error occurred during OAuth authentication",
+                "details": None
+            }
+        )
+
+
+@router.post(
+    "/logout",
+    response_model=LogoutResponse,
+    status_code=status.HTTP_200_OK,
+    summary="User logout",
+    description="Logout current authenticated user and invalidate their session",
+    operation_id="logoutUser",
+    responses={
+        200: {
+            "model": LogoutResponse,
+            "description": "User logged out successfully"
+        },
+        401: {
+            "model": ErrorResponse,
+            "description": "Authentication required"
+        }
+    }
+)
+async def logout_user(
+    current_user: Annotated[User, Depends(get_current_user)]
+) -> LogoutResponse:
+    """
+    Logout authenticated user.
+    
+    This endpoint logs out the current authenticated user by invalidating their session.
+    In a stateless JWT system, this primarily serves as a client-side logout trigger
+    since JWT tokens cannot be invalidated server-side without additional infrastructure.
+    
+    The client should remove the JWT token from storage after receiving this response.
+    
+    Args:
+        current_user: Current authenticated user from JWT token
+        
+    Returns:
+        LogoutResponse: Logout confirmation message
+        
+    Raises:
+        HTTPException: If user is not authenticated (401)
+    """
+    try:
+        logger.info(f"User logout: {current_user.email} (ID: {current_user.id})")
+        
+        # In a stateless JWT system, we don't maintain server-side sessions to invalidate
+        # The logout is primarily handled client-side by removing the token
+        # However, we can log the logout event for security/audit purposes
+        
+        # Future enhancement: Implement JWT blacklist/token revocation
+        # This would require a token blacklist storage mechanism (Redis, database)
+        
+        return LogoutResponse(
+            message="Logged out successfully"
+        )
+        
+    except Exception as e:
+        logger.error(f"Logout error for user {current_user.email}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "LOGOUT_ERROR", 
+                "message": "An error occurred during logout",
                 "details": None
             }
         )

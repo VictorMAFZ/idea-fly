@@ -3,3 +3,5 @@
 
 export { default as RegisterForm, type RegisterFormProps } from './RegisterForm';
 export { default as LoginForm, type LoginFormProps } from './LoginForm';
+export { default as LogoutButton } from './LogoutButton';
+export { GoogleAuthButton } from './GoogleAuthButton';

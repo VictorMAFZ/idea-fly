@@ -140,12 +140,12 @@ description: "Task list for Sistema de Autenticación de Usuarios implementation
 
 ### Implementation for User Story 4
 
-- [ ] T051 [US4] Create POST /auth/logout endpoint in `backend/src/auth/router.py`
-- [ ] T052 [P] [US4] Create LogoutButton component in `frontend/src/components/auth/LogoutButton.tsx`
-- [ ] T053 [P] [US4] Extend authentication service with logout function in `frontend/src/services/authService.ts`
-- [ ] T054 [P] [US4] Extend useAuth hook with logout function in `frontend/src/hooks/useAuth.ts`
-- [ ] T055 [US4] Integrate logout functionality with AuthContext in `frontend/src/contexts/AuthContext.tsx`
-- [ ] T056 [US4] Add logout button to authenticated layouts/header components
+- [x] T051 [US4] Create POST /auth/logout endpoint in `backend/src/auth/router.py`
+- [x] T052 [P] [US4] Create LogoutButton component in `frontend/src/components/auth/LogoutButton.tsx`
+- [x] T053 [P] [US4] Extend authentication service with logout function in `frontend/src/services/authService.ts`
+- [x] T054 [P] [US4] Extend useAuth hook with logout function in `frontend/src/hooks/useAuth.ts`
+- [x] T055 [US4] Integrate logout functionality with AuthContext in `frontend/src/contexts/AuthContext.tsx`
+- [x] T056 [US4] Add logout button to authenticated layouts/header components
 
 ### Tests for User Story 4 (Optional - Constitution Compliance)
 

@@ -455,3 +455,25 @@ export const authService = new AuthService();
 
 export default authService;
 export { AuthService };
+
+// ============================================================================
+// CONVENIENCE EXPORTS
+// ============================================================================
+
+/** Register a new user */
+export const register = (request: RegisterRequest) => authService.register(request);
+
+/** Login with email and password */
+export const login = (request: LoginRequest) => authService.login(request);
+
+/** Logout current user */
+export const logout = () => authService.logout();
+
+/** Authenticate with Google OAuth */
+export const googleAuth = (request: GoogleOAuthRequest) => authService.googleCallback(request);
+
+/** Get current user profile */
+export const getUserProfile = () => authService.getUserProfile();
+
+/** Refresh authentication token */
+export const refreshToken = () => authService.refreshToken();

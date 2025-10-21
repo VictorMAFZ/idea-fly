@@ -162,12 +162,12 @@ description: "Task list for Sistema de Autenticación de Usuarios implementation
 
 ### Implementation for Protected Routes
 
-- [ ] T059 [P] Create GET /users/me endpoint in `backend/src/auth/router.py`
-- [ ] T060 [P] Create middleware for route protection in `frontend/src/middleware.ts`
-- [ ] T061 [P] Create ProtectedRoute HOC in `frontend/src/components/ProtectedRoute.tsx`
-- [ ] T062 [P] Create dashboard page in `frontend/src/pages/dashboard.tsx`
-- [ ] T063 Implement session persistence in AuthContext with localStorage hydration in `frontend/src/contexts/AuthContext.tsx`
-- [ ] T064 [P] Setup automatic token refresh logic in `frontend/src/services/httpClient.ts`
+- [x] T059 [P] Create GET /users/me endpoint in `backend/src/auth/router.py`
+- [x] T060 [P] Create middleware for route protection in `frontend/src/middleware.ts`
+- [x] T061 [P] Create ProtectedRoute HOC in `frontend/src/components/ProtectedRoute.tsx`
+- [x] T062 [P] Create dashboard page in `frontend/src/pages/dashboard.tsx`
+- [x] T063 Implement session persistence in AuthContext with localStorage hydration in `frontend/src/contexts/AuthContext.tsx`
+- [x] T064 [P] Setup automatic token refresh logic in `frontend/src/services/httpClient.ts`
 
 ### Tests for Protected Routes (Optional)
 

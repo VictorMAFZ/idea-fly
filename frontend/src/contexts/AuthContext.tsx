@@ -480,6 +480,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [state.tokenExpiry, state.status]);
 
+  // Listen for token events from httpClient
+  useEffect(() => {
+    const handleTokenExpired = () => {
+      console.log('🔄 Token expired event received from httpClient');
+      dispatch({ type: 'TOKEN_EXPIRED' });
+      clearAuthFromStorage();
+    };
+
+    const handleTokenRefreshNeeded = async () => {
+      console.log('🔄 Token refresh needed event received from httpClient');
+      
+      // Only attempt refresh if we're authenticated and not already loading
+      if (state.status === AuthStatus.AUTHENTICATED && !state.loading && state.user) {
+        try {
+          await refreshUser();
+        } catch (error) {
+          console.error('Failed to refresh user profile for token renewal:', error);
+        }
+      }
+    };
+
+    // Add event listeners
+    window.addEventListener('auth:token-expired', handleTokenExpired);
+    window.addEventListener('auth:token-refresh-needed', handleTokenRefreshNeeded);
+
+    // Cleanup event listeners
+    return () => {
+      window.removeEventListener('auth:token-expired', handleTokenExpired);
+      window.removeEventListener('auth:token-refresh-needed', handleTokenRefreshNeeded);
+    };
+  }, [state.status, state.loading, state.user, refreshUser]);
+
   // ========================================
   // CONTEXT VALUE
   // ========================================

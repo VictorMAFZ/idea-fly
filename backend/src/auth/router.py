@@ -471,6 +471,69 @@ async def authenticate_with_google(
         )
 
 
+@router.get(
+    "/users/me",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get current user profile",
+    description="Retrieve the profile information of the currently authenticated user",
+    operation_id="getCurrentUser",
+    responses={
+        200: {
+            "model": UserResponse,
+            "description": "User profile retrieved successfully"
+        },
+        401: {
+            "model": ErrorResponse,
+            "description": "Authentication required"
+        }
+    }
+)
+async def get_current_user_profile(
+    current_user: Annotated[User, Depends(get_current_user)]
+) -> UserResponse:
+    """
+    Get current authenticated user profile.
+    
+    This endpoint returns the profile information of the currently authenticated user
+    based on the JWT token provided in the Authorization header.
+    
+    Args:
+        current_user: Current authenticated user from JWT token
+        
+    Returns:
+        UserResponse: User profile information
+        
+    Raises:
+        HTTPException: If user is not authenticated (401)
+    """
+    try:
+        logger.info(f"Profile request for user: {current_user.email} (ID: {current_user.id})")
+        
+        # Convert User model to UserResponse schema
+        user_response = UserResponse(
+            id=current_user.id,
+            name=current_user.name,
+            email=current_user.email,
+            is_active=current_user.is_active,
+            auth_provider=current_user.auth_provider,
+            created_at=current_user.created_at
+        )
+        
+        return user_response
+        
+    except Exception as e:
+        logger.error(f"Error retrieving profile for user {current_user.email}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "PROFILE_ERROR",
+                "message": "An error occurred while retrieving user profile",
+                "details": None
+            }
+        )
+
+
 @router.post(
     "/logout",
     response_model=LogoutResponse,

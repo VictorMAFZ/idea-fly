@@ -9,32 +9,13 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useIsAuthenticated, useCurrentUser } from '../../hooks/useAuth';
+import { useCurrentUser } from '../../hooks/useAuth';
 import { Header } from '../../components/layout';
+import { withProtectedRoute } from '../../components/ProtectedRoute';
 
-export default function DashboardPage() {
-  const router = useRouter();
-  const isAuthenticated = useIsAuthenticated();
+function DashboardPage() {
   const user = useCurrentUser();
-
-  // Redirect to login if not authenticated
-  React.useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
-
-  // Show loading while checking authentication
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+  const router = useRouter();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -48,7 +29,7 @@ export default function DashboardPage() {
           <div className="bg-white overflow-hidden shadow rounded-lg mb-6">
             <div className="px-4 py-5 sm:p-6">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                ¡Bienvenido, {user.name}!
+                ¡Bienvenido, {user?.name}!
               </h1>
               <p className="text-gray-600">
                 Este es tu dashboard personal donde puedes gestionar tus ideas y proyectos.
@@ -184,3 +165,9 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+// Export the dashboard page with route protection
+export default withProtectedRoute(DashboardPage, {
+  redirectTo: '/login',
+  requireActive: true
+});

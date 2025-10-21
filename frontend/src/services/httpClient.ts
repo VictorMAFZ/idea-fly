@@ -72,6 +72,23 @@ function isStoredTokenExpired(): boolean {
 }
 
 /**
+ * Check if token is close to expiring (within 5 minutes).
+ */
+function isTokenNearExpiry(): boolean {
+  try {
+    const expiryStr = localStorage.getItem(AUTH_EXPIRY_KEY);
+    if (!expiryStr) return true;
+    
+    const expiry = parseInt(expiryStr, 10);
+    const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000); // 5 minutes
+    return fiveMinutesFromNow >= expiry;
+  } catch (error) {
+    console.error('Failed to check token near expiry:', error);
+    return true;
+  }
+}
+
+/**
  * Clear auth data from localStorage.
  */
 function clearStoredAuth(): void {
@@ -208,12 +225,25 @@ class HttpClient {
    * Setup request and response interceptors.
    */
   private setupInterceptors(): void {
-    // Request interceptor - inject JWT token
+    // Request interceptor - inject JWT token and handle near expiry
     this.axiosInstance.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
         const token = getStoredToken();
         
-        if (token && !isStoredTokenExpired()) {
+        if (token) {
+          // Check if token is expired
+          if (isStoredTokenExpired()) {
+            clearStoredAuth();
+            window.dispatchEvent(new CustomEvent('auth:token-expired'));
+            return Promise.reject(new Error('Token expired'));
+          }
+          
+          // Check if token is close to expiring and emit event for proactive refresh
+          if (isTokenNearExpiry()) {
+            window.dispatchEvent(new CustomEvent('auth:token-refresh-needed'));
+          }
+          
+          // Inject token into request
           config.headers.Authorization = `Bearer ${token}`;
         }
         

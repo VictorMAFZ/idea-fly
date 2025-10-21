@@ -41,7 +41,7 @@ export interface UseAuthReturn extends AuthContextType {
   /** Logout current user using authService */
   logoutWithService: () => Promise<void>;
   /** Refresh current user data using authService */
-  refreshUserProfile: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 // ============================================================================
@@ -96,6 +96,7 @@ export function useAuth(): UseAuthReturn {
     register,
     login,
     loginWithGoogle,
+    loginWithGoogleToken,
     logout,
     refreshUser,
     clearError,
@@ -257,8 +258,8 @@ export function useAuth(): UseAuthReturn {
     register,
     login,
     loginWithGoogle,
+    loginWithGoogleToken,
     logout,
-    refreshUser,
     clearError,
     isAuthenticated,
     isTokenExpired,
@@ -268,7 +269,7 @@ export function useAuth(): UseAuthReturn {
     loginWithService,
     loginWithGoogleService,
     logoutWithService,
-    refreshUserProfile,
+    refreshUser: refreshUserProfile,
   };
 }
 
